@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+
+# Copyright (c) 2022 Anodized Software, Inc.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS IN THE SOFTWARE.
+
+set -euo pipefail
+
+E_BADARGS=85
+
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+spm_root="$script_dir/.spm"
+
+function spm_init {
+    if [ $# -ne 1 ]; then
+        echo "spm init error: incorrect arguments" >&2
+        echo "Usage: spm init repo_url" >&2
+        exit $E_BADARGS
+    fi
+
+    repo="$1"
+    mkdir -p "$spm_root"
+    pushd "$spm_root" > /dev/null
+    git clone "$repo"
+    popd > /dev/null
+
+    echo "Cloned repo"
+}
+
+function spm_run {
+    if [ $# -lt 3 ]; then
+        echo "spm run: incorrect arguments" >&2
+        echo "Usage: spm run repo_name tag executable_name [executable arguments...]" >&2
+        exit $E_BADARGS
+    fi
+
+    repo_name="$1"
+    tag="$2"
+    executable="$3"
+    shift 3
+
+    pushd "$spm_root/$repo_name" > /dev/null
+    if [ ! "$(git tag | grep "$tag")" ]; then
+        echo "Tag does not exist in local repo. Fetching."
+        git fetch
+    fi
+
+    git checkout "$tag"
+    xcrun --sdk macosx swift build
+    popd > /dev/null
+
+    "$spm_root/$repo_name/.build/debug/$executable" "$@"
+}
+
+function spm_help {
+    echo "spm [init | build | run]"
+    echo
+    echo "spm init repo_url"
+    echo "  Clones the package at repo_url to .spm/repo_name"
+    echo
+    echo "spm run repo_name tag executable_name [executable arguments...]"
+    echo "  Builds the package at .spm/repo_name for the specified tag. Then runs .spm/repo_name/.build/debug/executable_name, passing the specified arguments"
+}
+
+function spm_unknown_command {
+    echo "Unknown command: $@"
+    spm_help
+    exit $E_BADARGS
+}
+
+if [ $# -eq 0 ]; then
+    spm_help
+    exit $E_BADARGS
+fi
+
+subcommand="$1"
+shift
+
+case "$subcommand" in
+    "" | "-h" | "--help")
+        spm_help
+        ;;
+
+    "init")
+        spm_init "$@"
+        ;;
+
+    "run")
+        spm_run "$@"
+        ;;
+
+    *)
+        spm_unknown_command "$subcommand"
+        exit $E_BADARGS
+        ;;
+esac
+
