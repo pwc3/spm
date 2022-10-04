@@ -56,7 +56,7 @@ if [ $? -ne 0 ]; then
     "$script_dir/spm" init https://github.com/realm/SwiftLint
 fi
 
-"$script_dir/spm" run SwiftLint $version swiftlint "$source_root"
+"$script_dir/spm" run SwiftLint $version swiftlint -- "$source_root"
 ```
 
 Now you can add a Run Script Build Phase to your project that calls `bin/run-swiftlint.sh`.
