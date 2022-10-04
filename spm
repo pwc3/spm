@@ -62,14 +62,14 @@ function spm_run {
     fi
 
     git checkout "$tag"
-    xcrun --sdk macosx swift build
+    xcrun --sdk macosx swift build -c release
     popd > /dev/null
 
-    "$spm_root/$repo_name/.build/debug/$executable" "$@"
+    "$spm_root/$repo_name/.build/release/$executable" "$@"
 }
 
 function spm_help {
-    echo "spm [init | build | run]"
+    echo "spm [init | run]"
     echo
     echo "spm init repo_url"
     echo "  Clones the package at repo_url to .spm/repo_name"
