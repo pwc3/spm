@@ -46,6 +46,9 @@ version=0.49.1
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 project_root="$( cd "$script_dir" && cd .. && pwd )"
 
+# TODO: Set source_root to the root directory you want to lint
+source_root="$project_root/..."
+
 cd "$project_root"
 
 "$script_dir/spm" exists SwiftLint
@@ -53,10 +56,10 @@ if [ $? -ne 0 ]; then
     "$script_dir/spm" init https://github.com/realm/SwiftLint
 fi
 
-"$script_dir/spm" run SwiftLint $version swiftlint
+"$script_dir/spm" run SwiftLint $version swiftlint "$source_root"
 ```
 
-Now you can add a Run Script Build Phase to your project that calls `bin/run-swiftlint.sh`. You will still need a `.swiftlint.yml` file to configure the directories that are scanned. Otherwise, SwiftLint will lint any packages managed by `spm`, including the SwiftLint source itself.
+Now you can add a Run Script Build Phase to your project that calls `bin/run-swiftlint.sh`.
 
 **Be sure to add `bin/.spm` to your `.gitignore`**
 
