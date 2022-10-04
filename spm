@@ -43,6 +43,29 @@ function spm_init {
     echo "Cloned repo"
 }
 
+function spm_exists {
+    if [ $# -ne 1 ]; then
+        echo "spm exists error: incorrect arguments" >&2
+        echo "Usage: spm exists repo_name" >&2
+        exit $E_BADARGS
+    fi
+
+    repo_name="$1"
+    if [ ! -d "$spm_root/$repo_name" ]; then
+        echo "spm exists: no repo found for $repo_name, use 'spm init' to clone one" >&2
+        exit 1
+    fi
+
+    if [ ! -d "$spm_root/$repo_name/.git" ]; then
+        echo "spm exists: directory found for $repo_name but it is not a git repository" >&2
+        echo "consider deleting $spm_root/$repo_name and running 'spm init' again" >&2
+        exit 1
+    fi
+
+    echo "spm exists: repo exists for $repo_name"
+    exit 0
+}
+
 function spm_run {
     if [ $# -lt 3 ]; then
         echo "spm run: incorrect arguments" >&2
@@ -69,10 +92,13 @@ function spm_run {
 }
 
 function spm_help {
-    echo "spm [init | run]"
+    echo "spm [init | exists | run]"
     echo
     echo "spm init repo_url"
     echo "  Clones the package at repo_url to .spm/repo_name"
+    echo
+    echo "spm exists repo_name"
+    echo "  Checks whether a package exists at .spm/repo_name"
     echo
     echo "spm run repo_name tag executable_name [executable arguments...]"
     echo "  Builds the package at .spm/repo_name for the specified tag. Then runs .spm/repo_name/.build/debug/executable_name, passing the specified arguments"
@@ -99,6 +125,10 @@ case "$subcommand" in
 
     "init")
         spm_init "$@"
+        ;;
+
+    "exists")
+        spm_exists "$@"
         ;;
 
     "run")
